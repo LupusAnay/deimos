@@ -13,7 +13,6 @@ import Graphic
 import qualified SDL
 import World
 import Data.Maybe
-import Debug.Trace
 
 step :: Double -> System World ()
 step dT = do
@@ -26,11 +25,11 @@ everyoneChasePlayer = do
   cmap (\(Position p', Not :: Not Player) -> Position $ moveTowards p' p)
 
 moveTowards :: SDL.V2 Double -> SDL.V2 Double ->  SDL.V2 Double
-moveTowards p1 p2 = p1 + (single_len / 400) -- Move to 1/400 per tick
+moveTowards p1 p2 = p1 + step
   where
     diff = p2 - p1
-    single_len = fmap (\a -> if a == 0 then a else a / len) diff
-    len = let (SDL.V2 x y) = diff in sqrt $ x^2 + y^2
+    single_len = SDL.signorm diff
+    step = if any (isNaN) single_len then pure 0 else single_len / 400
 
 
 initialize :: Textures -> System World ()

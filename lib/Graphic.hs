@@ -5,6 +5,13 @@ import qualified Data.HashMap.Strict as HM
 import qualified SDL as SDL
 import SDL.Image hiding (load)
 import World
+  ( Fonts (Fonts),
+    Name (Name),
+    Position (..),
+    TextureMap,
+    Textures (..),
+    World,
+  )
 
 loadTextures :: SDL.Renderer -> [FilePath] -> IO Textures
 loadTextures r = (fmap (Textures . HM.fromList) . traverse getTex)
@@ -13,8 +20,8 @@ loadTextures r = (fmap (Textures . HM.fromList) . traverse getTex)
       tex <- loadTexture r p
       pure (p, tex)
 
-draw :: (Has World IO Textures) => SDL.Renderer -> Int -> SystemT World IO ()
-draw renderer fps = do
+draw :: (Has World IO Textures) => SDL.Renderer -> SystemT World IO ()
+draw renderer = do
   Textures texs <- get global
   Fonts fonts <- get global
   cmapM_ (\(p@(Position _), Name n) -> liftIO $ renderRect renderer texs p n)

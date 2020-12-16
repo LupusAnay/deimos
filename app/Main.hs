@@ -27,15 +27,11 @@ main = do
 
   SDL.showWindow window
 
-  let loop prevTicks secondTick fpsAcc prevFps = do
+  let loop prevTicks = do
         ticks <- SDL.ticks
         payload <- map SDL.eventPayload <$> SDL.pollEvents
         let quit = SDL.QuitEvent `elem` payload
             dt = ticks - prevTicks
-            calcFps = secondTick + dt > 1000
-            newFps = if calcFps then fpsAcc + 1 else prevFps
-            newFpsAcc = if calcFps then 1 else fpsAcc + 1
-            newSecondTick = if calcFps then mod (secondTick + dt) 1000 else secondTick + dt
 
         runSystem (handlePayload payload) world
 
@@ -44,9 +40,9 @@ main = do
         SDL.rendererDrawColor renderer SDL.$= SDL.V4 255 255 255 0
         SDL.clear renderer
 
-        runSystem (draw renderer newFps) world
+        runSystem (draw renderer) world
 
         SDL.present renderer
-        unless quit $ loop ticks newSecondTick newFpsAcc newFps
+        unless quit $ loop ticks
 
-  loop 0 0 0 0
+  loop 0
