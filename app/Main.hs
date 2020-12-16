@@ -1,47 +1,52 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE TypeFamilies #-}
-
 import Apecs
-import Graphics.Gloss
-import Linear (V2 (..))
-import Graphics.Gloss.Interface.IO.Simulate
-
-newtype Position = Position (V2 Double) deriving (Show)
-
-newtype Velocity = Velocity (V2 Double) deriving (Show)
-
-data Flying = Flying
-
-makeWorldAndComponents "World" [''Position, ''Velocity, ''Flying]
-
-initialize :: System World ()
-initialize = do
-  newEntity (Position 0, Velocity 1)
-  newEntity (Position 2, Velocity 1)
-  newEntity (Position 1, Velocity 2, Flying)
-
-  -- 1. Add velocity to position
-  -- 2. Apply gravity to non-flying entities
-  -- 3. Print a list of entities and their positions
-  cmap $ \(Position p, Velocity v) -> Position (v + p)
-  cmap $ \(Velocity v, _ :: Not Flying) -> Velocity (v - V2 0 1)
-  cmapM_ $ \(Position p, Entity e) -> liftIO . print $ (e, p)
-
-drawEntityInWorld :: (Position, Entity) -> Picture
-drawEntityInWorld (Position (V2 x y), e) = Polygon $ [(realToFrac x, realToFrac y)]
-
-disp = InWindow "Hello World" (640, 640) (10, 10)
-
-simulateDisp :: Display -> System World ()
-simulateDisp disp = do
-  w <- ask
-  liftIO $ simulateIO disp white 60 w (\_ -> drawWorld w) (\_ _ _ -> return w)
-
-drawWorld :: World -> IO Picture
-drawWorld w = pure $ Polygon [(realToFrac 1, realToFrac 1), (realToFrac 100, realToFrac 1), (realToFrac 50, realToFrac 100)]
+import Control.Monad
+import Deimos
+import qualified SDL
+import qualified SDL.Font
 
 main :: IO ()
-main = initWorld >>= runSystem (initialize >> simulateDisp disp)
+main = do
+  world <- initWorld
+
+  SDL.initialize [SDL.InitVideo]
+  SDL.Font.initialize
+
+  window <- SDL.createWindow "App" $ SDL.defaultWindow {SDL.windowGraphicsContext = SDL.OpenGLContext SDL.defaultOpenGL}
+  renderer <-
+    SDL.createRenderer
+      window
+      (-1)
+      SDL.RendererConfig
+        { SDL.rendererType = SDL.AcceleratedRenderer,
+          SDL.rendererTargetTexture = False
+        }
+
+  texs <- liftIO $ loadTextures renderer []
+
+  runSystem (initialize texs) world
+
+  SDL.showWindow window
+
+  let loop prevTicks secondTick fpsAcc prevFps = do
+        ticks <- SDL.ticks
+        payload <- map SDL.eventPayload <$> SDL.pollEvents
+        let quit = SDL.QuitEvent `elem` payload
+            dt = ticks - prevTicks
+            calcFps = secondTick + dt > 1000
+            newFps = if calcFps then fpsAcc + 1 else prevFps
+            newFpsAcc = if calcFps then 1 else fpsAcc + 1
+            newSecondTick = if calcFps then mod (secondTick + dt) 1000 else secondTick + dt
+
+        runSystem (handlePayload payload) world
+
+        runSystem (step $ fromIntegral dt) world
+
+        SDL.rendererDrawColor renderer SDL.$= SDL.V4 255 255 255 0
+        SDL.clear renderer
+
+        runSystem (draw renderer newFps) world
+
+        SDL.present renderer
+        unless quit $ loop ticks newSecondTick newFpsAcc newFps
+
+  loop 0 0 0 0

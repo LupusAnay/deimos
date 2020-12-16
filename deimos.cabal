@@ -17,16 +17,11 @@ category:            Game
 extra-source-files:  CHANGELOG.md
 
 library
-  exposed-modules:     MyLib
-  -- other-modules:
-  -- other-extensions:
-  build-depends:       base ^>=4.14.0.0
-  hs-source-dirs:      lib
-  default-language:    Haskell2010
-
-executable deimos
-  main-is:             Main.hs
-  -- other-modules:
+  exposed-modules:     Deimos
+  other-modules:
+    Event
+    World
+    Graphic
   -- other-extensions:
   default-extensions:
     DeriveGeneric
@@ -35,6 +30,29 @@ executable deimos
     ScopedTypeVariables
     TemplateHaskell
     TypeFamilies
+    FlexibleContexts
+    OverloadedStrings
+  build-depends:
+    base ^>=4.14.0.0,
+    text,
+    aeson,
+    generic-lens,
+    lens,
+    apecs,
+    sdl2,
+    sdl2-image,
+    sdl2-ttf,
+    unordered-containers,
+    linear
+  hs-source-dirs:      lib
+  default-language:    Haskell2010
+
+executable deimos
+  main-is:             Main.hs
+  -- other-modules:
+  -- other-extensions:
+  default-extensions:
+    OverloadedStrings
   build-depends:
     base ^>=4.14.0.0,
     deimos,
@@ -43,7 +61,10 @@ executable deimos
     generic-lens,
     lens,
     apecs,
-    gloss,
+    sdl2,
+    sdl2-image,
+    sdl2-ttf,
+    unordered-containers,
     linear
   hs-source-dirs:      app
   default-language:    Haskell2010
