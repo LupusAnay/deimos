@@ -33,8 +33,8 @@ main = do
         let quit = SDL.QuitEvent `elem` payload
             dt = ticks - prevTicks
 
-        runSystem (handlePayload payload) world
-
+        -- runSystem (handlePayload payload) world
+        runSystem handleKeyEvent world
         runSystem (step $ fromIntegral dt) world
 
         SDL.rendererDrawColor renderer SDL.$= SDL.V4 255 255 255 0

@@ -1,56 +1,58 @@
 module Event where
 
-import World
-import qualified SDL
 import Apecs
+import Control.Monad
 import Control.Monad.IO.Class
+import Data.Foldable
+import Data.Maybe
 import qualified Data.Text as T
+import qualified SDL
+import World
 
--- Handle the entire event payload
 handlePayload :: [SDL.EventPayload] -> System World ()
 handlePayload = mapM_ handleEvent
 
--- The main event handler function for dealing with keypresses
 handleEvent :: SDL.EventPayload -> System World ()
-handleEvent (SDL.KeyboardEvent ev) = handleKeyEvent ev
-handleEvent _ = pure ()
+handleEvent _ev = do
+  pure ()
 
--- For the handling keyboard events only
-handleKeyEvent :: SDL.KeyboardEventData -> System World ()
-handleKeyEvent ev = do
+handleKeyEvent :: System World ()
+handleKeyEvent = do
   (state :: GameState) <- get global
-  let code = SDL.keysymKeycode $ SDL.keyboardEventKeysym ev
-  case SDL.keyboardEventKeyMotion ev of
-    SDL.Pressed ->
-      case state of
-        Game -> gameAction code
-    SDL.Released -> pure ()
+  keyboardState <- SDL.getKeyboardState
 
--- For keyboard events that  take place in the game
-gameAction :: SDL.Keycode -> System World ()
-gameAction k =
-  let intents = lookup k defaultGameIntents in
-  case intents of
-    Just (Navigate dir) -> navigate dir
-    Just Wait -> do
-      postMessage "You wait.."
-    _ -> pure ()
+  let intents = mapMaybe (\(k, i) -> if keyboardState k then Just i else Nothing) defaultGameIntents
+  gameAction intents
+
+gameAction :: [GameIntent] -> System World ()
+gameAction intents = do
+  for_ intents $ \intent ->
+    case intent of
+      (Navigate dir) -> navigate dir
+      (Wait) -> postMessage "You wait.."
 
 navigate :: Direction -> System World ()
-navigate Up = cmap (\(Position (SDL.V2 x y), Player) -> Position $ SDL.V2 (x) (y - 10))
-navigate Down = cmap (\(Position (SDL.V2 x y), Player) -> Position $ SDL.V2 (x) (y + 10))
-navigate Left' = cmap (\(Position (SDL.V2 x y), Player) -> Position $ SDL.V2 (x - 10) (y))
-navigate Right' = cmap (\(Position (SDL.V2 x y), Player) -> Position $ SDL.V2 (x + 10) (y))
+navigate Up = cmap (\(Position (SDL.V2 x y), Player) -> Position $ SDL.V2 (x) (y - singleStep))
+navigate Down = cmap (\(Position (SDL.V2 x y), Player) -> Position $ SDL.V2 (x) (y + singleStep))
+navigate Left' = cmap (\(Position (SDL.V2 x y), Player) -> Position $ SDL.V2 (x - singleStep) (y))
+navigate Right' = cmap (\(Position (SDL.V2 x y), Player) -> Position $ SDL.V2 (x + singleStep) (y))
+
+singleStep :: Double
+singleStep = 10 / 1000
 
 postMessage :: (MonadIO m) => T.Text -> m ()
 postMessage t = liftIO $ putStrLn $ T.unpack t
 
 -- Initial bindings for intents
-defaultGameIntents :: [(SDL.Keycode, GameIntent)]
+defaultGameIntents :: [(SDL.Scancode, GameIntent)]
 defaultGameIntents =
-  [ (SDL.KeycodeUp , Navigate Up)
-  , (SDL.KeycodeLeft , Navigate Left')
-  , (SDL.KeycodeDown , Navigate Down)
-  , (SDL.KeycodeRight , Navigate Right')
-  , (SDL.KeycodeW, Wait)
+  [ (SDL.ScancodeW, Navigate Up),
+    (SDL.ScancodeA, Navigate Left'),
+    (SDL.ScancodeS, Navigate Down),
+    (SDL.ScancodeD, Navigate Right'),
+    (SDL.ScancodeUp, Navigate Up),
+    (SDL.ScancodeLeft, Navigate Left'),
+    (SDL.ScancodeDown, Navigate Down),
+    (SDL.ScancodeRight, Navigate Right')
+    -- , (SDL.KeycodeW, Wait)
   ]
