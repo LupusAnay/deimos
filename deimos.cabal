@@ -46,7 +46,8 @@ library
     unordered-containers,
     linear,
     protolude,
-    vector
+    vector,
+    filepath
   hs-source-dirs:      lib
   mixins:
     base hiding (Prelude),

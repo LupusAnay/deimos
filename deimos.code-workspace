@@ -5,6 +5,9 @@
 		}
 	],
 	"settings": {
-		"haskell.formattingProvider": "fourmolu"
+		"haskell.formattingProvider": "fourmolu",
+		"cSpell.words": [
+			"cmap"
+		]
 	}
 }
