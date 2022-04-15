@@ -1,35 +1,31 @@
-module Deimos
-  ( app,
-  )
-where
+module Deimos (
+  app,
+) where
 
-import Apecs
-  ( Not (..),
-    System,
-    cfold,
-    cmap,
-    global,
-    newEntity,
-    runSystem,
-    set,
-  )
-import Control.Monad (when, unless)
-import Control.Monad.IO.Class (MonadIO (liftIO))
+import Apecs (
+  Not (..),
+  System,
+  cfold,
+  cmap,
+  global,
+  newEntity,
+  runSystem,
+  set,
+ )
 import Data.Maybe (fromJust)
-import Data.Word (Word32)
-import Deimos.Component
-  ( MapElement (..),
-    Name (Name),
-    Player (..),
-    Position (Position),
-    Textures,
-    Time (Time),
-    World,
-    initWorld,
-    position,
-  )
-import Deimos.System.Event ( handleKeyEvent, handlePayload )
-import Deimos.System.Graphic ( draw, loadTextures )
+import Deimos.Component (
+  MapElement (..),
+  Name (Name),
+  Player (..),
+  Position (Position),
+  Textures,
+  Time (Time),
+  World,
+  initWorld,
+  position,
+ )
+import Deimos.System.Event (handleKeyEvent, handlePayload)
+import Deimos.System.Graphic (draw, loadTextures)
 import qualified SDL
 import qualified SDL.Font as SDLF
 import qualified SDL.Framerate
@@ -38,7 +34,7 @@ step :: Double -> System World ()
 step dT = do
   manager <- SDL.Framerate.manager
   framerate <- liftIO $ SDL.Framerate.get manager
-  when (dT >= 10) $ liftIO $ putStrLn $ "FPS: " <> show framerate <> "; DT: " <> show dT
+  when (dT >= 10) $ liftIO $ putText $ "FPS: " <> show framerate <> "; DT: " <> show dT
   everyoneChasePlayer dT
   pure ()
 
@@ -105,11 +101,11 @@ app = do
       window
       (-1)
       SDL.RendererConfig
-        { SDL.rendererType = SDL.AcceleratedRenderer,
-          SDL.rendererTargetTexture = False
+        { SDL.rendererType = SDL.AcceleratedRenderer
+        , SDL.rendererTargetTexture = False
         }
 
-  texs <- liftIO $ loadTextures renderer []
+  texs <- liftIO $ loadTextures renderer ["res/pacman.png"]
 
   runSystem (initialize texs) world
 

@@ -1,29 +1,18 @@
-module Deimos.Component
-  ( World (..),
-    initWorld,
-    Time (..),
-    Player (..),
-    Position (..),
-    GameState (..),
-    Name (..),
-    Textures (..),
-    Fonts (..),
-    MapElement (..),
-    position,
-  )
-where
+module Deimos.Component (
+  World (..),
+  initWorld,
+  Time (..),
+  Player (..),
+  Position (..),
+  GameState (..),
+  Name (..),
+  Textures (..),
+  Fonts (..),
+  MapElement (..),
+  position,
+) where
 
 import Apecs
-  ( Component (..),
-    Global,
-    Has (..),
-    Map,
-    SystemT (SystemT),
-    Unique,
-    asks,
-    explInit,
-    makeWorld,
-  )
 import qualified Data.HashMap.Strict as HM
 import qualified SDL
 import SDL.Font (Font)
@@ -47,12 +36,12 @@ instance Component Player where
 newtype Position = Position (SDL.V2 Double) deriving (Show)
 
 instance Component Position where
-  type Storage Position = Map Position
+  type Storage Position = Apecs.Map Position
 
-newtype Name = Name String deriving (Show)
+newtype Name = Name Text deriving (Show)
 
 instance Component Name where
-  type Storage Name = Map Name
+  type Storage Name = Apecs.Map Name
 
 data GameState = Game
 
@@ -62,7 +51,7 @@ instance Monoid GameState where mempty = Game
 
 instance Component GameState where type Storage GameState = Global GameState
 
-type TextureMap = HM.HashMap String SDL.Texture
+type TextureMap = HM.HashMap Text SDL.Texture
 
 newtype Textures = Textures TextureMap
 
@@ -72,7 +61,7 @@ instance Semigroup Textures where (<>) = mappend
 
 instance Monoid Textures where mempty = Textures HM.empty
 
-type FontMap = HM.HashMap String Font
+type FontMap = HM.HashMap Text Font
 
 newtype Fonts = Fonts FontMap
 
@@ -85,7 +74,7 @@ instance Monoid Fonts where mempty = Fonts HM.empty
 data MapElement = Rect | Circle
 
 instance Component MapElement where
-  type Storage MapElement = Map MapElement
+  type Storage MapElement = Apecs.Map MapElement
 
 makeWorld "World" [''Time, ''Player, ''Position, ''Name, ''GameState, ''Fonts, ''Textures, ''MapElement]
 

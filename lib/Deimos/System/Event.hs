@@ -1,22 +1,15 @@
 {-# LANGUAGE LambdaCase #-}
-module Deimos.System.Event
-  ( handlePayload,
-    handleKeyEvent,
-  )
-where
 
-import Apecs (System, cmap, get, global)
-import Control.Monad.IO.Class (MonadIO (..))
-import Data.Foldable (for_)
-import Data.Maybe (mapMaybe)
+module Deimos.System.Event (
+  handlePayload,
+  handleKeyEvent,
+) where
+
+import Apecs
 import qualified Data.Text as T
 import Deimos.Component
-  ( GameState,
-    Player (Player),
-    Position (Position),
-    World,
-  )
 import qualified SDL
+import Prelude hiding (Down)
 
 data Direction
   = Up
@@ -28,7 +21,6 @@ data GameIntent
   = Navigate Direction
   | Wait
 
-
 handlePayload :: [SDL.EventPayload] -> System World ()
 handlePayload = mapM_ handleEvent
 
@@ -38,7 +30,7 @@ handleEvent _ev = do
 
 handleKeyEvent :: Double -> System World ()
 handleKeyEvent dT = do
-  (_state :: GameState) <- get global
+  (_state :: GameState) <- Apecs.get global
   keyboardState <- SDL.getKeyboardState
 
   let intents = mapMaybe (\(k, i) -> if keyboardState k then Just i else Nothing) defaultGameIntents
@@ -64,12 +56,12 @@ postMessage t = liftIO $ putStrLn $ T.unpack t
 
 defaultGameIntents :: [(SDL.Scancode, GameIntent)]
 defaultGameIntents =
-  [ (SDL.ScancodeW, Navigate Up),
-    (SDL.ScancodeA, Navigate Left'),
-    (SDL.ScancodeS, Navigate Down),
-    (SDL.ScancodeD, Navigate Right'),
-    (SDL.ScancodeUp, Navigate Up),
-    (SDL.ScancodeLeft, Navigate Left'),
-    (SDL.ScancodeDown, Navigate Down),
-    (SDL.ScancodeRight, Navigate Right')
+  [ (SDL.ScancodeW, Navigate Up)
+  , (SDL.ScancodeA, Navigate Left')
+  , (SDL.ScancodeS, Navigate Down)
+  , (SDL.ScancodeD, Navigate Right')
+  , (SDL.ScancodeUp, Navigate Up)
+  , (SDL.ScancodeLeft, Navigate Left')
+  , (SDL.ScancodeDown, Navigate Down)
+  , (SDL.ScancodeRight, Navigate Right')
   ]

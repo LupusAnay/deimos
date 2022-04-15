@@ -1,2 +1,6 @@
 {
+  "cSpell.words": [
+    "Apecs"
+  ],
+  "haskell.formattingProvider": "fourmolu"
 }
