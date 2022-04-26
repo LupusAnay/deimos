@@ -9,11 +9,17 @@ module Deimos.Component (
   Textures (..),
   Fonts (..),
   MapElement (..),
+  Wave (..),
+  Tiles (..),
+  Timer (..),
   position,
 ) where
 
 import Apecs
 import qualified Data.HashMap.Strict as HM
+import Deimos.Component.ScreenSize
+import Deimos.Component.Tiles
+import Deimos.Component.Timer
 import qualified SDL
 import SDL.Font (Font)
 
@@ -76,7 +82,27 @@ data MapElement = Rect | Circle
 instance Component MapElement where
   type Storage MapElement = Apecs.Map MapElement
 
-makeWorld "World" [''Time, ''Player, ''Position, ''Name, ''GameState, ''Fonts, ''Textures, ''MapElement]
+data Wave = Wave Double
+  deriving (Show)
+
+instance Component Wave where
+  type Storage Wave = Apecs.Map Wave
+
+makeWorld
+  "World"
+  [ ''Time
+  , ''Player
+  , ''Position
+  , ''Name
+  , ''GameState
+  , ''Fonts
+  , ''Textures
+  , ''MapElement
+  , ''Wave
+  , ''Tiles
+  , ''ScreenSize
+  , ''Timer
+  ]
 
 position :: Double -> Double -> Position
 position x y = Position $ SDL.V2 x y

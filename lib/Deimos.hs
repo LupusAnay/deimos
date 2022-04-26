@@ -1,31 +1,20 @@
+{-# LANGUAGE ViewPatterns #-}
+
 module Deimos (
   app,
 ) where
 
-import Apecs (
-  Not (..),
-  System,
-  cfold,
-  cmap,
-  global,
-  newEntity,
-  runSystem,
-  set,
- )
+import Apecs
 import Data.Maybe (fromJust)
-import Deimos.Component (
-  MapElement (..),
-  Name (Name),
-  Player (..),
-  Position (Position),
-  Textures,
-  Time (Time),
-  World,
-  initWorld,
-  position,
- )
+import Deimos.Component
+import Deimos.Component.ScreenSize
+import Deimos.Component.Tiles
+import Deimos.Component.Timer
 import Deimos.System.Event (handleKeyEvent, handlePayload)
-import Deimos.System.Graphic (draw, loadTextures)
+import Deimos.System.Graphic
+import Deimos.Utils
+import Lens.Micro (ix, (.~))
+import Linear hiding (trace)
 import qualified SDL
 import qualified SDL.Font as SDLF
 import qualified SDL.Framerate
@@ -36,7 +25,40 @@ step dT = do
   framerate <- liftIO $ SDL.Framerate.get manager
   when (dT >= 10) $ liftIO $ putText $ "FPS: " <> show framerate <> "; DT: " <> show dT
   everyoneChasePlayer dT
+  updateWaves dT
+  increaseTimer dT
   pure ()
+
+updateWaves :: Double -> System World ()
+updateWaves dT = do
+  (ScreenSize w _) <- Apecs.get global
+  (Timer t) <- Apecs.get global
+
+  let maxR = fromIntegral $ w `div` tSize
+
+  when (t > 1500) $ do
+    cmapM (\(Player, pos :: Position) -> newEntity_ (Wave 1, pos))
+    resetTimer
+
+  -- Paint tiles
+  cmap (\(Wave r, tiles :: Tiles, Position pos) -> paintWavedTiles (toTilePosition pos) (round r) tiles)
+
+  -- Increase radius and delete big waves
+  cmap (\(Wave radius) -> if radius > maxR then Nothing else Just $ Wave $ radius + 0.03 * dT)
+
+paintWavedTiles :: V2 Int -> Int -> Tiles -> Tiles
+paintWavedTiles center radius (Tiles tiles) =
+  Tiles $ foldr (uncurry paintTile) tiles circlePoints
+  where
+    paintTile :: Color -> V2 Int -> [[Color]] -> [[Color]]
+    paintTile color (V2 x y) ts = ts & ix x . ix y .~ color
+    blue a = Color 0 0 255 a
+    waveWidth = 3
+    circlePoints =
+      mconcat
+        [ zip (repeat $ blue $ (50 * waveWidth) - abs (50 * aCoef)) $ generateCirclePoints' center (radius + aCoef)
+        | aCoef <- [- waveWidth .. waveWidth]
+        ]
 
 everyoneChasePlayer :: Double -> System World ()
 everyoneChasePlayer dT = do
@@ -44,24 +66,28 @@ everyoneChasePlayer dT = do
   cmap (\(Position p', Name _, Not :: Not Player) -> Position $ moveTowards dT p' p)
 
 moveTowards :: Double -> SDL.V2 Double -> SDL.V2 Double -> SDL.V2 Double
-moveTowards dT p1 p2 = p1 + (step * pure dT)
+moveTowards dT p1 p2 = p1 + (delta * pure dT)
   where
-    step = SDL.normalize (p2 - p1) / 20
+    delta = SDL.normalize (p2 - p1) / 20
 
-initialize :: Textures -> System World ()
-initialize texs = do
+initialize :: Textures -> ScreenSize -> System World ()
+initialize texs screenSize = do
   set global $ Time 0
   set global texs
+  set global screenSize
+  set global $ Timer 0
 
-  newEntity (Player, Name "Lola", position 0 0)
-  newEntity (Name "Harold", position 0 0)
+  _ <- newEntity (Player, Name "Lola", position 1700 1000)
+  -- _ <- newEntity (Name "Harold", position 0 0)
+  -- _ <- newEntity (Wave 1, position 20 20)
   gameMap
   pure ()
 
 gameMap :: System World ()
 gameMap = do
-  newEntity (Rect, position 10 10)
-  newEntity (Circle, position 150 150)
+  let tColor = Color 255 255 255 0
+  screenSize <- Apecs.get global
+  set global (Tiles [[tColor | _ <- [0 .. height screenSize `div` tSize]] | _ <- [0 .. width screenSize `div` tSize]])
   pure ()
 
 loop :: World -> SDL.Renderer -> Word32 -> IO ()
@@ -94,8 +120,15 @@ app = do
     SDL.createWindow "App" $
       SDL.defaultWindow
         { SDL.windowGraphicsContext = SDL.OpenGLContext SDL.defaultOpenGL
+        , SDL.windowHighDPI = True
+        , SDL.windowInitialSize = SDL.V2 1700 1000
+        , SDL.windowResizable = True
         }
 
+  (SDL.V2 w h) <- SDL.glGetDrawableSize window
+  let size = ScreenSize (fromIntegral w) (fromIntegral h)
+
+  print size
   renderer <-
     SDL.createRenderer
       window
@@ -105,9 +138,9 @@ app = do
         , SDL.rendererTargetTexture = False
         }
 
-  texs <- liftIO $ loadTextures renderer ["res/pacman.png"]
+  texs <- liftIO $ loadTextures renderer ["res/pacman.png", "res/lego.png"]
 
-  runSystem (initialize texs) world
+  runSystem (initialize texs size) world
 
   SDL.showWindow window
 

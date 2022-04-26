@@ -49,7 +49,7 @@ navigate dT Left' = cmap (\(Position (SDL.V2 x y), Player) -> Position $ SDL.V2 
 navigate dT Right' = cmap (\(Position (SDL.V2 x y), Player) -> Position $ SDL.V2 (x + singleStep dT) y)
 
 singleStep :: Double -> Double
-singleStep dT = 0.1 * dT
+singleStep dT = 0.5 * dT
 
 postMessage :: (MonadIO m) => T.Text -> m ()
 postMessage t = liftIO $ putStrLn $ T.unpack t

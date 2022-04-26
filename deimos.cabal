@@ -1,81 +1,90 @@
-cabal-version:       3.0
-
-name:                deimos
-version:             0.1.0.0
-homepage:            https://github.com/lupusanay/deimos
-license:             NONE
-author:              Ilya Kopeshtianski
-maintainer:          lupusanay@gmail.com
-category:            Game
+cabal-version:      3.0
+name:               deimos
+version:            0.1.0.0
+homepage:           https://github.com/lupusanay/deimos
+license:
+author:             Ilya Kopeshtianski
+maintainer:         lupusanay@gmail.com
+category:           Game
 extra-source-files:
   CHANGELOG.md
   fourmolu.yaml
-data-dir:
-  res
+
+data-dir:           res
 
 library
-  exposed-modules:
-    Deimos
+  exposed-modules:    Deimos
   other-modules:
     Deimos.Component
+    Deimos.Component.ScreenSize
+    Deimos.Component.Tiles
+    Deimos.Component.Timer
     Deimos.System
     Deimos.System.Event
     Deimos.System.Graphic
     Deimos.Utils
+
   default-extensions:
     DeriveGeneric
+    DerivingStrategies
+    FlexibleContexts
     FlexibleInstances
     MultiParamTypeClasses
+    OverloadedStrings
     ScopedTypeVariables
     TemplateHaskell
-    TypeFamilies
-    FlexibleContexts
-    OverloadedStrings
     TypeApplications
+    TypeFamilies
+
   build-depends:
-    base ^>=4.14.0.0,
-    text,
-    aeson,
-    generic-lens,
-    lens,
-    apecs,
-    sdl2,
-    sdl2-image,
-    sdl2-ttf,
-    sdl2-gfx,
-    unordered-containers,
-    linear,
-    protolude,
-    vector,
-    filepath
-  hs-source-dirs:      lib
+    , aeson
+    , apecs
+    , base                  ^>=4.14.0.0
+    , containers
+    , filepath
+    , generic-lens
+    , lens
+    , linear
+    , microlens
+    , protolude
+    , sdl2
+    , sdl2-gfx
+    , sdl2-image
+    , sdl2-ttf
+    , text
+    , unordered-containers
+    , vector
+
+  hs-source-dirs:     lib
   mixins:
     base hiding (Prelude),
     protolude (Protolude as Prelude)
-  default-language:    Haskell2010
-  ghc-options: -Wall
+
+  default-language:   Haskell2010
+  ghc-options:        -Wall
 
 executable deimos
-  main-is:             Main.hs
-  default-extensions:
-    OverloadedStrings
+  main-is:            Main.hs
+  default-extensions: OverloadedStrings
   build-depends:
-    base ^>=4.14.0.0,
-    deimos,
-    text,
-    aeson,
-    generic-lens,
-    lens,
-    apecs,
-    sdl2,
-    sdl2-image,
-    sdl2-ttf,
-    unordered-containers,
-    protolude,
-    linear
-  hs-source-dirs:      app
+    , aeson
+    , apecs
+    , base                  ^>=4.14.0.0
+    , deimos
+    , generic-lens
+    , lens
+    , linear
+    , protolude
+    , sdl2
+    , sdl2-image
+    , sdl2-ttf
+    , text
+    , unordered-containers
+
+  hs-source-dirs:     app
   mixins:
     base hiding (Prelude),
     protolude (Protolude as Prelude)
-  default-language:    Haskell2010
-  ghc-options: -Wall -Werror
+
+  default-language:   Haskell2010
+  ghc-options:        -Wall -Werror
