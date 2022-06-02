@@ -16,6 +16,7 @@ library
   exposed-modules:    Deimos
   other-modules:
     Deimos.Component
+    Deimos.Component.Position
     Deimos.Component.ScreenSize
     Deimos.Component.Tiles
     Deimos.Component.Timer
@@ -30,11 +31,14 @@ library
     FlexibleContexts
     FlexibleInstances
     MultiParamTypeClasses
+    OverloadedLabels
     OverloadedStrings
+    RecordWildCards
     ScopedTypeVariables
     TemplateHaskell
     TypeApplications
     TypeFamilies
+    ViewPatterns
 
   build-depends:
     , aeson
@@ -46,6 +50,7 @@ library
     , lens
     , linear
     , microlens
+    , microlens-platform
     , protolude
     , sdl2
     , sdl2-gfx

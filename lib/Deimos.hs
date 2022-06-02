@@ -1,10 +1,9 @@
-{-# LANGUAGE ViewPatterns #-}
-
 module Deimos (
   app,
 ) where
 
 import Apecs
+import Data.Generics.Labels ()
 import Data.Maybe (fromJust)
 import Deimos.Component
 import Deimos.Component.ScreenSize
@@ -13,7 +12,7 @@ import Deimos.Component.Timer
 import Deimos.System.Event (handleKeyEvent, handlePayload)
 import Deimos.System.Graphic
 import Deimos.Utils
-import Lens.Micro (ix, (.~))
+import Lens.Micro ((.~))
 import Linear hiding (trace)
 import qualified SDL
 import qualified SDL.Font as SDLF
@@ -31,32 +30,32 @@ step dT = do
 
 updateWaves :: Double -> System World ()
 updateWaves dT = do
-  (ScreenSize w _) <- Apecs.get global
+  screenSize <- Apecs.get global
   (Timer t) <- Apecs.get global
 
-  let maxR = fromIntegral $ w `div` tSize
+  let maxR = maxTilesWidth screenSize defaultTileSize
 
   when (t > 1500) $ do
     cmapM (\(Player, pos :: Position) -> newEntity_ (Wave 1, pos))
     resetTimer
 
   -- Paint tiles
-  cmap (\(Wave r, tiles :: Tiles, Position pos) -> paintWavedTiles (toTilePosition pos) (round r) tiles)
+  cmapM (\(Wave r, tiles :: Tiles, Position pos) -> liftIO $ paintWavedTiles (toTilePosition pos) (round r) tiles)
 
   -- Increase radius and delete big waves
-  cmap (\(Wave radius) -> if radius > maxR then Nothing else Just $ Wave $ radius + 0.03 * dT)
+  cmap (\(Wave radius) -> if radius >= maxR then Nothing else Just $ Wave $ radius + 0.03 * dT)
 
-paintWavedTiles :: V2 Int -> Int -> Tiles -> Tiles
-paintWavedTiles center radius (Tiles tiles) =
-  Tiles $ foldr (uncurry paintTile) tiles circlePoints
+paintWavedTiles :: V2 Int -> Int -> Tiles -> IO Tiles
+paintWavedTiles center radius tiles =
+  -- bulkUpdateTilesMutable tiles (TileUpdates circlePoints)
+  pure $ bulkUpdateTiles tiles (TileUpdates circlePoints)
   where
-    paintTile :: Color -> V2 Int -> [[Color]] -> [[Color]]
-    paintTile color (V2 x y) ts = ts & ix x . ix y .~ color
     blue a = Color 0 0 255 a
     waveWidth = 3
+    -- updates = TileUpdates $ map (\(pos, col) -> (#tColor .~ col, pos)) circlePoints
     circlePoints =
       mconcat
-        [ zip (repeat $ blue $ (50 * waveWidth) - abs (50 * aCoef)) $ generateCirclePoints' center (radius + aCoef)
+        [ zip (repeat (#tColor .~ blue ((50 * waveWidth) - abs (50 * aCoef)))) (generateCirclePoints' center (radius + aCoef))
         | aCoef <- [- waveWidth .. waveWidth]
         ]
 
@@ -85,9 +84,9 @@ initialize texs screenSize = do
 
 gameMap :: System World ()
 gameMap = do
-  let tColor = Color 255 255 255 0
   screenSize <- Apecs.get global
-  set global (Tiles [[tColor | _ <- [0 .. height screenSize `div` tSize]] | _ <- [0 .. width screenSize `div` tSize]])
+  tiles <- generateTiles screenSize defaultTileSize
+  set global tiles
   pure ()
 
 loop :: World -> SDL.Renderer -> Word32 -> IO ()

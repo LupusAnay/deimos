@@ -12,11 +12,12 @@ module Deimos.Component (
   Wave (..),
   Tiles (..),
   Timer (..),
-  position,
+  position
 ) where
 
 import Apecs
 import qualified Data.HashMap.Strict as HM
+import Deimos.Component.Position
 import Deimos.Component.ScreenSize
 import Deimos.Component.Tiles
 import Deimos.Component.Timer
@@ -38,11 +39,6 @@ data Player = Player deriving (Show)
 
 instance Component Player where
   type Storage Player = Unique Player
-
-newtype Position = Position (SDL.V2 Double) deriving (Show)
-
-instance Component Position where
-  type Storage Position = Apecs.Map Position
 
 newtype Name = Name Text deriving (Show)
 
@@ -103,6 +99,3 @@ makeWorld
   , ''ScreenSize
   , ''Timer
   ]
-
-position :: Double -> Double -> Position
-position x y = Position $ SDL.V2 x y
